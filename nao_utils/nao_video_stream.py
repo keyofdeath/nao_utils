@@ -8,7 +8,8 @@ import os
 from threading import Thread
 
 import numpy as np
-from naoqi import ALProxy
+
+from nao_utils.nao_utils import NaoUtils
 
 PYTHON_LOGGER = logging.getLogger(__name__)
 if not os.path.exists("log"):
@@ -27,7 +28,7 @@ PYTHON_LOGGER.setLevel(logging.DEBUG)
 FOLDER_ABSOLUTE_PATH = os.path.normpath(os.path.dirname(os.path.abspath(__file__)))
 
 
-class NaoVideoStream:
+class NaoVideoStream(NaoUtils):
     def __init__(self, ip="169.254.88.3", port=9559, cam_index=0, fps=10):
         """
 
@@ -36,11 +37,9 @@ class NaoVideoStream:
         :param cam_index: 0 = head, 1 = mouth
         :param fps:
         """
-        self.ip = ip
-        self.port = port
+        NaoUtils.__init__(self, ip, port)
         self.cam_index = cam_index
         self.fps = fps
-        self.camProxy = ALProxy("ALVideoDevice", ip, port)
         self.resolution = 1
         # BGR
         self.colorSpace = 13
