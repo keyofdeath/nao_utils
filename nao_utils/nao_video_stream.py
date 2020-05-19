@@ -43,11 +43,19 @@ class NaoVideoStream(NaoUtils):
         self.resolution = 1
         # BGR
         self.colorSpace = 13
-        self.videoClient = self.camProxy.subscribeCamera("nao_video_stream",
-                                                         cam_index,
-                                                         self.resolution,
-                                                         self.colorSpace,
-                                                         self.fps)
+        try:
+            self.videoClient = self.camProxy.subscribeCamera("nao_video_stream",
+                                                             cam_index,
+                                                             self.resolution,
+                                                             self.colorSpace,
+                                                             self.fps)
+        except Exception:
+            self.camProxy.unsubscribe("nao_video_stream")
+            self.videoClient = self.camProxy.subscribeCamera("nao_video_stream",
+                                                             cam_index,
+                                                             self.resolution,
+                                                             self.colorSpace,
+                                                             self.fps)
         self.stopped = False
         self.frame = None
 

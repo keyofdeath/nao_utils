@@ -4,12 +4,11 @@
 """
 
 Usage:
-  teachable_machine.py <ip> <model>
+  teachable_machine.py <ip>
 
 Options:
   -h --help      Show this screen.
   <ip>           Nao ip
-  <model>        Teachable machine model path
 """
 
 from __future__ import absolute_import
@@ -17,14 +16,13 @@ from __future__ import absolute_import
 import logging.handlers
 import os
 
-import cv2
-import numpy as np
-import tensorflow as tf
 from docopt import docopt
 
 from nao_utils.nao_speech import NaoSpeech
 from nao_utils.nao_utils import NaoUtils
 from nao_utils.nao_video_stream import NaoVideoStream
+from utils import http_json_request
+import time
 
 PYTHON_LOGGER = logging.getLogger(__name__)
 if not os.path.exists("log"):
@@ -45,33 +43,27 @@ FOLDER_ABSOLUTE_PATH = os.path.normpath(os.path.dirname(os.path.abspath(__file__
 args = docopt(__doc__)
 
 IP = args["<ip>"]
-SIZE = (224, 224)
 
-# Load the model
-model = tf.keras.models.load_model(os.path.join(args["<model>"], "keras_model.h5"))
-with open(os.path.join(args["<model>"], "labels.txt")) as f:
-    # Remove \n and remove the index next to the label name: <index> <label name>
-    labels = [' '.join(l.replace('\n', '').split(' ')[1:]) for l in f]
 wait_list = ["MiddleTactilTouched", "RightBumperPressed", "LeftBumperPressed"]
 
 nao_utils = NaoUtils(IP)
 video_stream = NaoVideoStream(IP).start()
 speech = NaoSpeech(IP)
 
-speech.speech_and_move("On va tester le réseau de neuronne que vous avez fait!"
-                       "Apuy sur le dessu de ma tête quand tu est prêt."
-                       "Pour arreter le test apuy sur l'un de mais pied")
+nao_utils.nao_posture.goToPosture("Stand", 1.0)
+speech.speech_and_move(u'On va tester le réseau de neuronne que vous avez fait! Apuy sur le dessu de ma tête quand tu est prêt. Pour arreter le test. Apuy sur l\'un de mais pied')
 while True:
 
     event = nao_utils.wait_for(wait_list)
     if event == "RightBumperPressed" or event == "LeftBumperPressed":
         break
     frame = video_stream.frame
-    frame = cv2.resize(frame, SIZE, interpolation=cv2.INTER_AREA)
-    normalized_image_array = (frame.astype(np.float32) / 127.0) - 1
-    model_input = np.expand_dims(normalized_image_array, axis=0)
-    prediction = model.predict(model_input)
-    label_name = labels[prediction.argmax(axis=1)[0]]
-    speech.speech("J'ai reconus le label {}".format(label_name))
+    if frame is None:
+        continue
+    label = http_json_request({"img": frame.tolist()}, "http://localhost:8888/")
+    if label is not None:
+        label_name = label["label"].encode()
+        speech.speech("J'ai reconus le label {}".format(label_name))
+    time.sleep(1)
 
 video_stream.stop()

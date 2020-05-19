@@ -52,9 +52,18 @@ class NaoUtils:
             event_list = ["MiddleTactilTouched"]
         self.nao_led.off("AllLeds")
         self.nao_led.on("AllLedsRed")
-        while True:
+
+        press = False
+        press_button = None
+        while not press:
             for button_name in event_list:
-                if self.nao_memory.getData(button_name) != 1:
-                    self.nao_led.off("AllLeds")
-                    self.nao_led.on("AllLedsGreen")
-                    return button_name
+                if self.nao_memory.getData(button_name) == 1:
+                    press_button = button_name
+                    press = True
+                    break
+
+        while True:
+            if self.nao_memory.getData(press_button) == 0:
+                self.nao_led.off("AllLeds")
+                self.nao_led.on("AllLedsGreen")
+                return press_button

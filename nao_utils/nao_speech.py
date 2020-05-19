@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import
 
 import codecs
 import logging.handlers
@@ -43,7 +44,7 @@ class NaoSpeech(NaoUtils):
         :param text_to_say: texte à dire
         :return:
         """
-
+        text_to_say = u'{}'.format(text_to_say)
         if len(text_to_say) <= NB_CHARS_MOVE_THRESHOLD:
             self.nao_speech.say(codecs.encode(text_to_say, "utf-8"))
             return
